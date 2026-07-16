@@ -96,8 +96,14 @@ if [[ -n "${DIR:-}" ]]; then
     [[ -n "$COLS" ]] || COLS=$(tput cols 2>/dev/null) || COLS=""
     [[ -n "$COLS" ]] || COLS="${COLUMNS:-}"
 
-    # 1-col right margin avoids wrapping if Claude renders at full width.
-    gap=$(( ${COLS:-0} - ${#LEFT} - ${#DIR} - 1 ))
+    # Keep the dir this many columns clear of the right edge. Claude Code renders
+    # the bar a couple of columns short of full width and truncates anything past
+    # that with an ellipsis, so we stop short (also gives it some breathing room).
+    # Override live via env without a rebuild if the gap needs tuning.
+    RIGHT_MARGIN="${CC_STATUSLINE_RIGHT_MARGIN:-4}"
+    [[ "$RIGHT_MARGIN" =~ ^[0-9]+$ ]] || RIGHT_MARGIN=4
+
+    gap=$(( ${COLS:-0} - ${#LEFT} - ${#DIR} - RIGHT_MARGIN ))
     if [[ -n "$COLS" ]] && (( gap >= 1 )); then
         printf '%s%*s%s' "$LEFT" "$gap" "" "$DIR"
     else
